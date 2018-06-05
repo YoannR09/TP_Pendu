@@ -2,15 +2,15 @@ package fr.yoannroche.pendu;
 
 import java.io.Serializable;
 
-public class Score implements Serializable {
+public class Score extends Jeu implements Serializable {
 	
-	protected static int point ;
+	protected int point ;
 	protected String nom ;
 	public Score() {
 		
 	}
 	public Score(int point , String nom) {
-		Score.point = point ;
+		this.point = point ;
 		this.nom = nom ;
 	}
 	

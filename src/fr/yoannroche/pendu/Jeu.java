@@ -4,17 +4,19 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.List;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
-import java.util.LinkedList;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -24,14 +26,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextArea;
-import javax.swing.UIManager;
-import fr.yoannroche.pendu.Score;
-
-
-
-
-
-
 
 
 
@@ -45,28 +39,14 @@ public class Jeu extends Panelall{
 	private Thread t;
 	private JButton launch ;
 	private String word = "", secretWord = "";
-	private Score scoreL = new Score ();  
 	private int point ;
-	
-	
-	
-	
-	
 	private int nombreC = 0;
-	private boolean secretWord_fini = false ;
-	private boolean carac_saisie = false ;
-	
-
-	 
-
 	private int pointMarque ;
 	private int nombreE = 0 ;
 	private String topC = "" , topP = "" , topM = "";
-	private char lettretrouver  ;
-	private char lettrecacher;
-
-
 	JLabel image = new JLabel () ;
+	String nom ;
+	
 	private ImageIcon pendu0 = new ImageIcon("src/fr/yoannroche/pendu/images/pendu0.png");
 	private ImageIcon pendu1 = new ImageIcon("src/fr/yoannroche/pendu/images/pendu1.png");
 	private ImageIcon pendu2 = new ImageIcon("src/fr/yoannroche/pendu/images/pendu2.png");
@@ -83,15 +63,9 @@ public class Jeu extends Panelall{
 
 	JLabel motSecret = new JLabel () ;
 	JLabel motTrouver = new JLabel ();
-	
+
 	JLabel nombreMot = new JLabel ();
 	JLabel score = new JLabel () ;
-
-
-
-
-
-
 
 	/**
 	 * Création des JPanel qui seront utilisés dans notre class Jeu
@@ -110,7 +84,7 @@ public class Jeu extends Panelall{
 	BoutonListener boutonA = new BoutonListener ();
 	SourisListener bsListener = new SourisListener ();
 	Font normal = new Font ("arial", Font.BOLD, 13);
-	Font motCA = new Font ("arial Solid", Font.BOLD, 35);
+	Font motCA = new Font ("arial Solid", Font.BOLD, 30);
 
 
 	/**
@@ -119,13 +93,14 @@ public class Jeu extends Panelall{
 	 * @param dim
 	 */
 
+	
 	public Jeu(Dimension dim){
 
 		super(dim);
 		top();
 		initMot();
 		initPanel();
-		
+
 
 	}
 
@@ -196,7 +171,7 @@ public class Jeu extends Panelall{
 		/**
 		 * Ajout des affichages clavier avant lancement partie , pendant la partie et aprés.
 		 */
-		
+
 		this.panel.add(ecranSI,BorderLayout.NORTH);
 		this.panel.add(clavier,BorderLayout.SOUTH);
 		this.panel.add(clavierV,BorderLayout.SOUTH);
@@ -219,7 +194,7 @@ public class Jeu extends Panelall{
 		this.motSecret.setText("_ _ _ _ _ _ _ _" );
 		this.motSecret.setForeground(Color.white);
 		this.motSecret.setHorizontalAlignment(JLabel.CENTER);	
-		
+
 
 		motP.add(motSecret,BorderLayout.CENTER);
 
@@ -232,9 +207,9 @@ public class Jeu extends Panelall{
 		progress.setBackground(Color.getHSBColor(0.0400f, 0.54f, 0.80f));
 		progress.setBorder(BorderFactory.createLineBorder(Color.black));
 		t = new Thread(new Traitement());
-		
+
 		bar = new JProgressBar();
-		
+
 		bar.setMaximum(6000);
 		bar.setMinimum(0);
 		bar.setStringPainted(false);
@@ -259,7 +234,7 @@ public class Jeu extends Panelall{
 				clavier.setVisible(true);
 				clavierV.setVisible(false);
 				nombreErreurs ();
-				
+
 
 			}
 		});
@@ -341,7 +316,7 @@ public class Jeu extends Panelall{
 		this.nombreMot.setFont(normal);
 		scoreP.add(this.nombreMot,BorderLayout.CENTER);
 
-		this.score.setText("Votre score :  "+ Score.point);
+		this.score.setText("Votre score :  "+ point);
 		this.score.setPreferredSize(new Dimension(300, 20));
 		this.score.setHorizontalAlignment(JLabel.CENTER);
 		this.score.setForeground(Color.white);
@@ -385,15 +360,16 @@ public class Jeu extends Panelall{
 
 				bar.setValue(val);
 				if(bar.getValue()== 6000) {
+					t.stop();
 					clavier.setVisible(false);
 					clavierV.setVisible(false);
 					clavierP.setVisible(true);
 					clavierV.setVisible(false);
 					JOptionPane.showMessageDialog(null,
-				            "Désolé, vous avez perdu!\n" + "Le mot était : "+word +
-				            "\n\n\tVous n'avez  pas assez de points pour enregistrer votre score.          \n" ,
-				           
-				            "Vous avez perdu", JOptionPane.NO_OPTION);
+							"Désolé, vous avez perdu!\n" + "Le mot était : "+word +
+							"\n\n\tVous n'avez  pas assez de points pour enregistrer votre score.          \n" ,
+
+							"Vous avez perdu", JOptionPane.NO_OPTION);
 
 				}
 				try {
@@ -415,33 +391,66 @@ public class Jeu extends Panelall{
 	 *
 	 */
 	class BoutonListener implements ActionListener {
-		
+
 		public void actionPerformed(ActionEvent arg0) {
 			
-			for(int i = 0 ; i < word.length() ;i++ ){
-			
-			if(((JButton)arg0.getSource()).getText().charAt(0) == word.charAt(i)) {
-				for(int s = i ; s < secretWord.length();) {
-					lettrecacher = secretWord.charAt(s);
-				lettretrouver =((JButton)arg0.getSource()).getText().charAt(0) ;
-			lettrecacher = lettretrouver ;
-			motSecret.setText(secretWord += lettretrouver);
-			
-					
-					carac_saisie = true ;
-					break ;
-			}
-			}
-			}		
-			++nombreE ;
-			nombreErreurs ();
+			char proposition = ((JButton)arg0.getSource()).getText().charAt(0);
 
-			initPoint();
+			boolean mot_Fini = false;
+			boolean lettre_ok = false;
+			char [] charArray = word.toCharArray();
+			char [] charArray2 = secretWord.toCharArray();
+			int lettre_trouver = 0 ;
+			
+			
+			for(int i = 0 ; i < charArray.length ; i++ ) {
+				
+				char lettre_find = word.charAt(i);
+				if(proposition == lettre_find) {
+					lettre_ok = true ;
+					if(lettre_ok == true ) {
+						char lettreV = charArray2[i];
+						char lettreK = charArray[i];
+						lettreV = lettreK ;
+						
+					    charArray2[i] = lettreV ;
+					    String str = new String(charArray2);
+					   secretWord=str;
+					   lettre_trouver = +i ;
+					   char trait = '-' ;
+					   boolean trouve = (secretWord.indexOf(trait) != -1);
+					   if(trouve == false) {
+						   mot_fini();
+					}
+				
+				}
+				
+				}
+				
+				}
+			
+				
+	
+			
+			System.out.println(nombreC);
+			if(lettre_ok == false) {
+				++nombreC;
+			++nombreE;
+			nombreErreurs();
 			
 			}
 			
+			}
 			
-	}
+			}
+
+
+		
+
+		
+
+
+	
 
 	public void initMot(){
 
@@ -469,7 +478,7 @@ public class Jeu extends Panelall{
 			word = word.trim().toUpperCase();
 			for(int j = 0; j < this.word.length(); j++)
 			{
-				secretWord +=  "*" ;
+				secretWord +=  "-" ;
 			}
 
 
@@ -482,15 +491,7 @@ public class Jeu extends Panelall{
 		}
 
 
-		
 
-	}
-
-
-
-
-	public boolean secretWord_fini(){
-		return secretWord_fini = false;
 
 	}
 
@@ -498,41 +499,31 @@ public class Jeu extends Panelall{
 
 		if (nombreE == 1 ) {
 			image.setIcon(pendu1);
-			++nombreC;
-
 		}
 		if (nombreE == 2 ) {
 			image.setIcon(pendu2);
-			++nombreC;
-
 		}
 		if (nombreE == 3 ) {
 			image.setIcon(pendu3);
-			++nombreC;
-
 		}
 		if (nombreE == 4 ) {
 			image.setIcon(pendu4);
-			++nombreC;
 
 		}
 		if (nombreE == 5 ) {
 			image.setIcon(pendu5);
-			++nombreC;
 
 		}
 		if (nombreE == 6 ) {
 			image.setIcon(pendu6);
-			++nombreC;
-
 		}
 		if (nombreE == 7 ) {
 			image.setIcon(pendu7);
 			JOptionPane.showMessageDialog(null,
-		            "Désolé, vous avez perdu !\n" + "Le mot était :" + word +
-		            "\n\n\tVous n'avez pas assez de points pour enregistrer votre score.                \n" ,
-		            
-		            "Vous avez perdu", JOptionPane.NO_OPTION);
+					"Désolé, vous avez perdu !\n" + "Le mot était :" + word +
+					"\n\n\tVous n'avez pas assez de points pour enregistrer votre score.                \n" ,
+
+					"Vous avez perdu", JOptionPane.NO_OPTION);
 			clavier.setVisible(false);
 			clavierV.setVisible(false);
 			clavierP.setVisible(true);
@@ -614,49 +605,67 @@ public class Jeu extends Panelall{
 			e.printStackTrace();
 		}
 
-	}
-	public void initPoint() {
-		
-		  if (nombreC == 1 ) {
-			  point += 100 ;
-			  
-
-			}
-			if (nombreC == 2 ) {
-				point += 50;
-				
-
-			}
-			if (nombreC == 3 ) {
-				point += 35;
-			
-
-			}
-			if (nombreC == 4 ) {
-				point += 25;
-				
-			}
-			if (nombreC == 5 ) {
-				point += 10 ;
-				
-
-			}
-			if (nombreC == 6 ) {
-				point += 5 ;
-				
-
-			}
-			if (nombreC == 7 ) {  
-				point += 0 ;
-				
-			}
-	  }
-
-	
-
-
 
 
 }
+	public void mot_fini(){
+		t.stop();
+		JOptionPane jop = new JOptionPane(), jop2 = new JOptionPane();
+	    String nom = jop.showInputDialog(null, "Veuillez écrire votre pseudo !", "Gagné", JOptionPane.QUESTION_MESSAGE);
+	    jop2.showMessageDialog(null, "Votre nom est " + nom,"Pseudo", JOptionPane.INFORMATION_MESSAGE);
+	    nombreCoup ();
+	    ObjectInputStream ois;
+	    ObjectOutputStream oos;
+	    try {
+	      oos = new ObjectOutputStream(
+	              new BufferedOutputStream(
+	                new FileOutputStream(
+	                  new File("src/fr/yoannroche/pendu/score.txt"))));
+	        	
+	      oos.writeObject(point);
+	      oos.writeObject(nom);
+	    
+	} catch (FileNotFoundException e) {
+	      e.printStackTrace();
+	    } catch (IOException e) {
+	      e.printStackTrace();
+	    }     	
+	  }
+	      
+	    
+	    
+	    
+	    
+	  
+	public void nombreCoup () {
 
+		if (nombreC == 0 ) {
+			point = +100 ;
+		}
+		if (nombreC == 1 ) {
+			point = +50 ;
+		}
+		if (nombreC == 2 ) {
+			point = +35 ;
+		}
+		if (nombreC == 3 ) {
+			point = +25 ;
+		}
+		if (nombreC == 4 ) {
+			point = +15 ;
+
+		}
+		if (nombreC == 5 ) {
+			point = +10 ;
+
+		}
+		if (nombreC == 6 ) {
+			point = +5 ;
+		}
+		if (nombreC == 7 ) {
+			point = 0 ;
+		}
+	
+	}
+}
 
