@@ -14,11 +14,4 @@
 	<natures>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>src/fr/yoannroche/pendu/dictionnaire.txt</name>
-			<type>1</type>
-			<location>C:/Users/yoann/eclipse-workspace/Pendu/src/fr/yoannroche/pendu/dictionnaire.txt</location>
-		</link>
-	</linkedResources>
 </projectDescription>
